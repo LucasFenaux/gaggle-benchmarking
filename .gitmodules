@@ -1,0 +1,9 @@
+[submodule "gaggle"]
+	path = gaggle
+	url = git@github.com:LucasFenaux/GAG.git
+[submodule "pyGAD"]
+	path = pyGAD
+	url = git@github.com:ahmedfgad/GeneticAlgorithmPython.git
+[submodule "LEAP"]
+	path = LEAP
+	url = git@github.com:AureumChaos/LEAP.git
