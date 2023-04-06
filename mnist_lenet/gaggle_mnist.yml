@@ -5,14 +5,14 @@ dataset_args:
   dataset_name: MNIST
 
 ga_args:
-  population_size: 200
-  num_parents: 200
+  population_size: 20
+  num_parents: 20
   crossover: uniform
   selection: weighted
   mutation: uniform
   mutation_chance: 0.01
-  elitism: 0.1
-  generations: 10000
+  elitism: 0.
+  generations: 10
   eval_every_generation: 50
 
 env_args:

@@ -1,3 +1,5 @@
+import time
+beginning_time = time.time()
 import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
@@ -37,9 +39,11 @@ def train(outdir_args: OutdirArgs,
     ds_test: Dataset = DatasetFactory.from_dataset_args(dataset_args, train=False)
     population_manager: PopulationManager = PopulationManager(ga_args, individual_args, env_args=env_args)
     trainer: SimpleGA = GAFactory.from_ga_args(ga_args, env_args=env_args)
+    trainer.window_size = 2
     trainer.train(population_manager=population_manager, ds_train=ds_train, ds_test=ds_test, outdir_args=outdir_args)
     trainer.save_metrics(outdir_args, save_train=True, save_eval=True)
 
 
 if __name__ == "__main__":
     train(*parse_args())
+    print(f"Total program time: {time.time() - beginning_time}")

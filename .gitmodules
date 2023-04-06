@@ -8,6 +8,6 @@
 [submodule "LEAP"]
 	path = LEAP
 	url = git@github.com:AureumChaos/LEAP.git
-[submodule "torchGA"]
-    path = torchGA
-    url = git@github.com:ahmedfgad/TorchGA.git
+[submodule "TorchGA"]
+	path = TorchGA
+	url = git@github.com:ahmedfgad/TorchGA.git
