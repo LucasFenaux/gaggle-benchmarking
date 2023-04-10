@@ -7,7 +7,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 from pyGAD import pygad
 from TorchGA import torchga
 import torch
-from src.data import MNIST
+from src.problem.dataset import MNIST
 from src.base_nns.lenet import LeNet5
 from src.arguments import ProblemArgs
 
