@@ -10,6 +10,13 @@ import torch
 from src.data import MNIST
 from src.base_nns.lenet import LeNet5
 from src.arguments import ProblemArgs
+import argparse
+
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description=" ")
+    parser.add_argument("--population-size", dest="population_size", default=200, type=int)
+    return parser
 
 
 def accuracy(y_pred, y) -> float:
@@ -56,9 +63,12 @@ def callback_generation(ga_instance):
     times.append(time_taken)
 
 
-num_solutions = 200
+args = get_arg_parser().parse_args()
+
+num_solutions = args.population_size
+print(num_solutions)
 num_generations = 100
-num_parents_mating = 200
+num_parents_mating = args.population_size
 keep_parents = 0
 keep_elitism = 0
 crossover = "uniform"

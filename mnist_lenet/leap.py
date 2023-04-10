@@ -22,12 +22,20 @@ from leap_ec.algorithm import generational_ea
 
 from leap_ec.real_rep.initializers import create_real_vector
 from new_leap_operators import PytorchDecoder, ClassificationProblem, accuracy, TimingProbe, mutate_uniform, build_probes
+import argparse
+
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description=" ")
+    parser.add_argument("--population-size", dest="population_size", default=200, type=int)
+    return parser
 
 ##############################
 # Entry point
 ##############################
 if __name__ == '__main__':
     problem_args = ProblemArgs()
+    args = get_arg_parser().parse_args()
 
     device = torch.device("cuda")
 
@@ -43,7 +51,8 @@ if __name__ == '__main__':
 
     # Parameters
     runs_per_fitness_eval = 1
-    pop_size = 200
+    pop_size = args.population_size
+    print(pop_size)
     gui = False  # Change to true to watch the cart-pole visualization
     low = -1.
     high = 1.
