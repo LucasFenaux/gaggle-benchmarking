@@ -9,23 +9,23 @@ from TorchGA import torchga
 import torch
 from src.data import MNIST
 from src.base_nns.lenet import LeNet5
-from src.arguments import DatasetArgs
+from src.arguments import ProblemArgs
 
 
 def accuracy(y_pred, y) -> float:
     return (y_pred.argmax(1) == y).float().mean()
 
 
-dataset_args = DatasetArgs()
+problem_args = ProblemArgs()
 
 device = torch.device("cuda")
 
-train_dataset = MNIST(dataset_args, train=True)
+train_dataset = MNIST(problem_args, train=True)
 train_data, train_transforms = train_dataset.get_data_and_transform()
 data_input, data_target = train_data
 data_input, data_target = data_input.to(device), data_target.to(device)
 
-test_dataset = MNIST(dataset_args, train=False)
+test_dataset = MNIST(problem_args, train=False)
 test_data, test_transforms = test_dataset.get_data_and_transform()
 
 model = LeNet5().to(device)
@@ -57,10 +57,10 @@ def callback_generation(ga_instance):
 
 
 num_solutions = 200
-num_generations = 10
+num_generations = 100
 num_parents_mating = 200
 keep_parents = 0
-keep_elitism = 20  # 10% of 200
+keep_elitism = 0
 crossover = "uniform"
 mutation_type = "random"
 mutation_probability = 0.01

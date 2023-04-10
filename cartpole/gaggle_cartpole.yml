@@ -1,0 +1,22 @@
+individual_args:
+  model_name: lenet
+
+ga_args:
+  population_size: 20
+  num_parents: 20
+  crossover: uniform
+  selection: weighted
+  mutation: uniform
+  mutation_chance: 0.01
+  elitism: 0.
+  generations: 10
+  eval_every_generation: 50
+
+env_args:
+  batch_size: 50000
+  eval_batch_size: 10000
+  device: cuda
+
+output_dir:
+  root: ../experiments   # creates this root directory for the outputs
+  name: mnist            # the name of the experiment (optional)

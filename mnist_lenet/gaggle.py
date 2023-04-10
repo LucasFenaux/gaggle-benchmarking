@@ -5,45 +5,49 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 
-from src.arguments import ConfigArgs, DatasetArgs, EnvArgs, IndividualArgs, OutdirArgs, GAArgs
-from src.data import Dataset, DatasetFactory
+from src.arguments import ConfigArgs
+from src.arguments.problem_args import ProblemArgs
+from src.arguments.sys_args import SysArgs
+from src.arguments.individual_args import IndividualArgs
+from src.arguments.outdir_args import OutdirArgs
+from src.arguments.ga_args import GAArgs
 from src.population.population_manager import PopulationManager
 from src.utils.special_print import print_dict_highlighted
-from src.ga import SimpleGA, GAFactory
+from src.ga import GA
+from src.ga.ga_factory import GAFactory
 import transformers
 
 
 def parse_args():
-    parser = transformers.HfArgumentParser((OutdirArgs, EnvArgs, IndividualArgs, GAArgs, DatasetArgs,
+    parser = transformers.HfArgumentParser((OutdirArgs, SysArgs, IndividualArgs, GAArgs, ProblemArgs,
                                             ConfigArgs))
     return parser.parse_args_into_dataclasses()
 
 
 def train(outdir_args: OutdirArgs,
-          env_args: EnvArgs,
+          sys_args: SysArgs,
           individual_args: IndividualArgs,
           ga_args: GAArgs,
-          dataset_args: DatasetArgs,
+          problem_args: ProblemArgs,
           config_args: ConfigArgs):
-    """ Train a model from scratch on a dataset. """
+    """ Train a model from scratch on a data. """
     if config_args.exists():
         outdir_args = config_args.get_outdir_args()
-        env_args = config_args.get_env_args()
+        sys_args = config_args.get_sys_args()
         individual_args = config_args.get_individual_args()
-        dataset_args = config_args.get_dataset_args()
+        problem_args = config_args.get_problem_args()
         ga_args = config_args.get_ga_args()
 
     print_dict_highlighted(vars(ga_args))
 
-    ds_train: Dataset = DatasetFactory.from_dataset_args(dataset_args, train=True)
-    ds_test: Dataset = DatasetFactory.from_dataset_args(dataset_args, train=False)
-    population_manager: PopulationManager = PopulationManager(ga_args, individual_args, env_args=env_args)
-    trainer: SimpleGA = GAFactory.from_ga_args(ga_args, env_args=env_args)
-    trainer.window_size = 2
-    trainer.train(population_manager=population_manager, ds_train=ds_train, ds_test=ds_test, outdir_args=outdir_args)
-    trainer.save_metrics(outdir_args, save_train=True, save_eval=True)
+    population_manager: PopulationManager = PopulationManager(ga_args, individual_args, sys_args=sys_args)
+    trainer: GA = GAFactory.from_ga_args(population_manager=population_manager, ga_args=ga_args,
+                                         problem_args=problem_args, sys_args=sys_args, outdir_args=outdir_args,
+                                         individual_args=individual_args)
+    trainer.train()
 
 
 if __name__ == "__main__":
     train(*parse_args())
+
     print(f"Total program time: {time.time() - beginning_time}")
