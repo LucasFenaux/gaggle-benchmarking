@@ -10,6 +10,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../LEAP'))
 sys.path.insert(1, os.path.join(sys.path[0], '../LEAP/leap_ec'))
 
 import torch
+import pickle
 
 
 from src.problem.dataset import MNIST
@@ -86,6 +87,12 @@ if __name__ == '__main__':
                             ])
         list(ea)
 
-    print(timing_probe.buffer)
+    times = timing_probe.buffer
+    dir = 'Results/'
+    filename = 'leap_pop_size_{}.p'.format(args.population_size)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    with open(os.path.join(dir,filename), 'wb') as f:
+        pickle.dump(times, f)
 
     print(f"Total program time: {time.time() - beginning_time}")

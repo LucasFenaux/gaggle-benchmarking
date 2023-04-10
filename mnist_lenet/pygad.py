@@ -7,6 +7,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 from pyGAD import pygad
 from TorchGA import torchga
 import torch
+import pickle
 from src.problem.dataset import MNIST
 from src.base_nns.lenet import LeNet5
 from src.arguments import ProblemArgs
@@ -111,5 +112,12 @@ abs_error = accuracy(predictions, test_targets)
 print("Accuracy : ", abs_error.cpu().detach().numpy())
 
 print(f"Times: {times}")
+
+dir = 'Results/'
+filename = 'pygad_pop_size_{}.p'.format(args.population_size)
+if not os.path.exists(dir):
+    os.makedirs(dir)
+with open(os.path.join(dir,filename), 'wb') as f:
+    pickle.dump(times, f)
 
 print(f"Total program time: {time.time() - beginning_time}")
