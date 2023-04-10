@@ -40,6 +40,7 @@ def train(outdir_args: OutdirArgs,
         problem_args = config_args.get_problem_args()
         ga_args = config_args.get_ga_args()
         ga_args.population_size = pop_size
+        ga_args.num_parents = pop_size
     print_dict_highlighted(vars(ga_args))
 
     population_manager: PopulationManager = PopulationManager(ga_args, individual_args, sys_args=sys_args)

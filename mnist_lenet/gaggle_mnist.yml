@@ -15,8 +15,8 @@ ga_args:
   mutation_chance: 0.01
   elitism: 0.
   parent_survival_rate: 0.5
-  generations: 1000
-  eval_every_generation: 50
+  generations: 100
+  eval_every_generation: 1000
 
 sys_args:
   device: cuda
