@@ -73,6 +73,7 @@ num_parents_mating = args.population_size
 keep_parents = 0
 keep_elitism = 0
 crossover = "uniform"
+crossover_probability = 0.5
 mutation_type = "random"
 mutation_probability = 0.01
 random_mutation_min_val = -1.
@@ -91,6 +92,7 @@ ga_instance = pygad.GA(num_generations=num_generations,
                        keep_parents=keep_parents,
                        keep_elitism=keep_elitism,
                        crossover_type=crossover,
+                       crossover_probability=crossover_probability,
                        mutation_type=mutation_type,
                        mutation_probability=mutation_probability,
                        random_mutation_min_val=random_mutation_min_val,
