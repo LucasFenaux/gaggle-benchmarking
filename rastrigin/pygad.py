@@ -6,13 +6,19 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 from pyGAD import pygad
 import numpy as np
+import pickle
+import argparse
 
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description=" ")
+    parser.add_argument("--dimension", dest="dimension", default=1000, type=int)
+    return parser
 
 times = []
 
-d = 100
 def fitness_func(solution, sol_idx):
-    return -d * len(solution) + np.sum(solution ** 2 - d * np.cos(2 * np.pi * solution))
+    return 1 / (args.dimension * len(solution) + np.sum(solution ** 2 - args.dimension * np.cos(2 * np.pi * solution)))
 
 
 
@@ -26,6 +32,7 @@ def callback_generation(ga_instance):
     last_gen_time = cur_time
     times.append(time_taken)
 
+args = get_arg_parser().parse_args()
 
 num_solutions = 200
 num_generations = 100
@@ -53,7 +60,7 @@ ga_instance = pygad.GA(num_generations=num_generations,
                        init_range_high=5.12,
                        init_range_low=-5.12,
                        sol_per_pop=200,
-                       num_genes=d)
+                       num_genes=args.dimension)
 
 last_gen_time = time.time()
 
@@ -70,4 +77,11 @@ print("Index of the best solution : {solution_idx}".format(solution_idx=solution
 
 print(f"Times: {times}")
 
+dir = 'Results/'
+filename = 'pygad_dimension_{}.p'.format(args.dimension)
+if not os.path.exists(dir):
+    os.makedirs(dir)
+with open(os.path.join(dir,filename), 'wb') as f:
+    pickle.dump(times, f)
+    
 print(f"Total program time: {time.time() - beginning_time}")

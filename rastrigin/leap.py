@@ -9,7 +9,13 @@ sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 sys.path.insert(1, os.path.join(sys.path[0], '../LEAP'))
 sys.path.insert(1, os.path.join(sys.path[0], '../LEAP/leap_ec'))
 
-import torch
+import pickle
+import argparse
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description=" ")
+    parser.add_argument("--dimension", dest="dimension", default=1000, type=int)
+    return parser
 
 
 
@@ -28,14 +34,13 @@ from new_leap_operators import TimingProbe, mutate_uniform, build_probes
 ##############################
 if __name__ == '__main__':
 
-
+    args = get_arg_parser().parse_args()
     # Parameters
     runs_per_fitness_eval = 1
     pop_size = 200
-    low = -1.
-    high = 1.
+    low = -5.12
+    high = 5.12
     generations = 100
-    d = 4
     # Load the OpenAI Gym simulation
 
     # Representation
@@ -44,7 +49,7 @@ if __name__ == '__main__':
     # but also wrap an argmax around the networks so their
     # output is a single integer
     decoder = IdentityDecoder()
-    problem = RastriginProblem(d)
+    problem = RastriginProblem(args.dimension)
     timing_probe = TimingProbe()
     with open('./genomes.csv', 'w') as genomes_file:
 
@@ -54,7 +59,7 @@ if __name__ == '__main__':
                             problem=problem,
 
                             representation=Representation(
-                                initialize=create_real_vector(bounds=([(-5.12, 5.12)]*d)),
+                                initialize=create_real_vector(bounds=([(-5.12, 5.12)]*args.dimension)),
                                 decoder=decoder),
 
                             # The operator pipeline.
@@ -63,7 +68,7 @@ if __name__ == '__main__':
                                 ops.proportional_selection,
                                 ops.clone,
                                 ops.uniform_crossover(p_xover=0.5),
-                                mutate_uniform(low=low, high=high, expected_num_mutations=617),
+                                mutate_uniform(low=low, high=high, expected_num_mutations=args.dimension*0.01),
                                 ops.evaluate,
                                 ops.pool(size=pop_size),
                                 timing_probe,  # we're nice we don't include all of their extra logging in the computation
@@ -71,6 +76,12 @@ if __name__ == '__main__':
                             ])
         list(ea)
 
-    print(timing_probe.buffer)
+    times = timing_probe.buffer
+    dir = 'Results/'
+    filename = 'leap_dimension_{}.p'.format(args.dimension)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    with open(os.path.join(dir,filename), 'wb') as f:
+        pickle.dump(times, f)
 
     print(f"Total program time: {time.time() - beginning_time}")
