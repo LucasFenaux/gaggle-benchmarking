@@ -11,10 +11,11 @@ sys.path.insert(1, os.path.join(sys.path[0], '../LEAP/leap_ec'))
 
 import pickle
 import argparse
+import numpy as np
 
 def get_arg_parser():
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--dimension", dest="dimension", default=2, type=int)
+    parser.add_argument("--dimension", dest="dimension", default=10, type=int)
     return parser
 
 
@@ -25,10 +26,44 @@ from leap_ec import probe, ops
 from leap_ec.algorithm import generational_ea
 
 from leap_ec.real_rep.initializers import create_real_vector
-from leap_ec.real_rep.problems import RastriginProblem
+from leap_ec.real_rep.problems import ScalarProblem
 from leap_ec.decoder import IdentityDecoder
 from new_leap_operators import TimingProbe, mutate_uniform, build_probes
+class RastriginProblem(ScalarProblem):
+    """ Modified to include negative fittness (LEAP had a bug)
+    """
+    """ Standard bounds."""
+    bounds = (-5.12, 5.12)
+    #NOTE we changed maximize to true
+    def __init__(self, a=1.0, maximize=True):
+        super().__init__(maximize)
+        self.a = a
+    def evaluate(self, phenome):
+        """
+        Computes the function value from a real-valued list phenome:
 
+        >>> phenome = [1.0/12, 0]
+        >>> RastriginProblem().evaluate(phenome) # doctest: +ELLIPSIS
+        0.1409190406...
+
+        :param phenome: real-valued vector to be evaluated
+        :returns: its fitness
+        """
+        #NOTE: We made negative as it is wrong
+        if isinstance(phenome, np.ndarray):
+            return - (self.a * len(phenome) + \
+                np.sum(phenome ** 2 - self.a * np.cos(2 * np.pi * phenome)))
+        return self.a * \
+            len(phenome) + sum([x ** 2 - self.a *
+                                np.cos(2 * np.pi * x) for x in phenome])
+
+    def worse_than(self, first_fitness, second_fitness):
+        return super().worse_than(first_fitness, second_fitness)
+
+    def __str__(self):
+        return RastriginProblem.__name__
+    
+    
 ##############################
 # Entry point
 ##############################
@@ -49,7 +84,7 @@ if __name__ == '__main__':
     # but also wrap an argmax around the networks so their
     # output is a single integer
     decoder = IdentityDecoder()
-    problem = RastriginProblem(args.dimension, maximize=False)
+    problem = RastriginProblem(args.dimension, maximize=True)
     timing_probe = TimingProbe()
     with open('./genomes.csv', 'w') as genomes_file:
 

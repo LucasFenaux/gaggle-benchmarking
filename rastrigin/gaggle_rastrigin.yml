@@ -16,7 +16,7 @@ ga_args:
 individual_args:
   param_lower_bound: -5.12
   param_upper_bound: 5.12
-  np_individual_size: 2
+  np_individual_size: 10
   individual_name: numpy
 
 sys_args:

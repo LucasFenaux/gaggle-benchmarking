@@ -20,18 +20,45 @@ from src.ga import GA
 from src.ga.ga_factory import GAFactory
 import transformers
 import pickle
-from leap_ec.real_rep.problems import RastriginProblem
+import numpy as np
+from leap_ec.real_rep.problems import ScalarProblem
 from dataclasses import dataclass, field
 
 
-# @dataclass
-# class ProblemArgsMod(ProblemArgs):
-#     dimension: int = field(default=10, metadata={
-#         "help": "dimension of rastrigin problem",
-#     })
-#
-#
-# ConfigArgs.update(ProblemArgs.CONFIG_KEY, ProblemArgsMod)
+class RastriginProblem(ScalarProblem):
+    """ Modified to include negative fittness (LEAP had a bug)
+    """
+    """ Standard bounds."""
+    bounds = (-5.12, 5.12)
+    #NOTE we changed maximize to true
+    def __init__(self, a=1.0, maximize=True):
+        super().__init__(maximize)
+        self.a = a
+
+    def evaluate(self, phenome):
+        """
+        Computes the function value from a real-valued list phenome:
+
+        >>> phenome = [1.0/12, 0]
+        >>> RastriginProblem().evaluate(phenome) # doctest: +ELLIPSIS
+        0.1409190406...
+
+        :param phenome: real-valued vector to be evaluated
+        :returns: its fitness
+        """
+        #NOTE: We made negative as it is wrong
+        if isinstance(phenome, np.ndarray):
+            return - (self.a * len(phenome) + \
+                np.sum(phenome ** 2 - self.a * np.cos(2 * np.pi * phenome)))
+        return self.a * \
+            len(phenome) + sum([x ** 2 - self.a *
+                                np.cos(2 * np.pi * x) for x in phenome])
+
+    def worse_than(self, first_fitness, second_fitness):
+        return super().worse_than(first_fitness, second_fitness)
+
+    def __str__(self):
+        return RastriginProblem.__name__
 
 
 def parse_args():
@@ -48,14 +75,22 @@ def train(outdir_args: OutdirArgs,
           config_args: ConfigArgs):
     """ Train a model from scratch on a data. """
     if config_args.exists():
+<<<<<<< HEAD
         np_individual_size = individual_args.np_individual_size
+=======
+        dim = individual_args.np_individual_size
+>>>>>>> 242409e9869c4074dc35bb2e5d794314380e9d1f
         outdir_args = config_args.get_outdir_args()
         sys_args = config_args.get_sys_args()
         individual_args = config_args.get_individual_args()
         problem_args = config_args.get_problem_args()
         ga_args = config_args.get_ga_args()
+<<<<<<< HEAD
         individual_args.np_individual_size = np_individual_size
 
+=======
+        individual_args.np_individual_size = dim
+>>>>>>> 242409e9869c4074dc35bb2e5d794314380e9d1f
     print_dict_highlighted(vars(problem_args))
 
     ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,
@@ -69,7 +104,7 @@ def train(outdir_args: OutdirArgs,
     trainer.train()
     times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
-    filename = 'gaggle_dimension_{}.p'.format(problem_args.dimension)
+    filename = 'gaggle_dimension_{}.p'.format(individual_args.np_individual_size)
     if not os.path.exists(dir):
         os.makedirs(dir)
     with open(os.path.join(dir,filename), 'wb') as f:
