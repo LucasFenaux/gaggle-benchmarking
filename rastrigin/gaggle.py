@@ -16,6 +16,8 @@ from src.arguments.ga_args import GAArgs
 from src.population.population_manager import PopulationManager
 from src.utils.special_print import print_dict_highlighted
 from src.problem.problem_factory import ProblemFactory
+from src.problem.problem import Problem
+from src.population.individual import Individual
 from src.ga import GA
 from src.ga.ga_factory import GAFactory
 import transformers
@@ -24,40 +26,40 @@ import numpy as np
 from leap_ec.real_rep.problems import ScalarProblem
 
 
-class RastriginProblem(ScalarProblem):
-    """ Modified to include negative fittness (LEAP had a bug)
-    """
-    """ Standard bounds."""
-    bounds = (-5.12, 5.12)
-    #NOTE we changed maximize to true
-    def __init__(self, a=1.0, maximize=True):
-        super().__init__(maximize)
-        self.a = a
+# class RastriginProblem(ScalarProblem):
+#     """ Modified to include negative fittness (LEAP had a bug)
+#     """
+#     """ Standard bounds."""
+#     bounds = (-5.12, 5.12)
+#     #NOTE we changed maximize to true
+#     def __init__(self, a=1.0, maximize=True):
+#         super().__init__(maximize)
+#         self.a = a
 
-    def evaluate(self, phenome):
-        """
-        Computes the function value from a real-valued list phenome:
+#     def evaluate(self, phenome):
+#         """
+#         Computes the function value from a real-valued list phenome:
 
-        >>> phenome = [1.0/12, 0]
-        >>> RastriginProblem().evaluate(phenome) # doctest: +ELLIPSIS
-        0.1409190406...
+#         >>> phenome = [1.0/12, 0]
+#         >>> RastriginProblem().evaluate(phenome) # doctest: +ELLIPSIS
+#         0.1409190406...
 
-        :param phenome: real-valued vector to be evaluated
-        :returns: its fitness
-        """
-        #NOTE: We made negative as it is wrong
-        if isinstance(phenome, np.ndarray):
-            return - (self.a * len(phenome) + \
-                np.sum(phenome ** 2 - self.a * np.cos(2 * np.pi * phenome)))
-        return self.a * \
-            len(phenome) + sum([x ** 2 - self.a *
-                                np.cos(2 * np.pi * x) for x in phenome])
+#         :param phenome: real-valued vector to be evaluated
+#         :returns: its fitness
+#         """
+#         #NOTE: We made negative as it is wrong
+#         if isinstance(phenome, np.ndarray):
+#             return - (self.a * len(phenome) + \
+#                 np.sum(phenome ** 2 - self.a * np.cos(2 * np.pi * phenome)))
+#         return self.a * \
+#             len(phenome) + sum([x ** 2 - self.a *
+#                                 np.cos(2 * np.pi * x) for x in phenome])
 
-    def worse_than(self, first_fitness, second_fitness):
-        return super().worse_than(first_fitness, second_fitness)
+#     def worse_than(self, first_fitness, second_fitness):
+#         return super().worse_than(first_fitness, second_fitness)
 
-    def __str__(self):
-        return RastriginProblem.__name__
+#     def __str__(self):
+#         return RastriginProblem.__name__
 
 
 def parse_args():
@@ -83,8 +85,17 @@ def train(outdir_args: OutdirArgs,
         individual_args.np_individual_size = dim
     print_dict_highlighted(vars(problem_args))
 
-    ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,
-                                                     a=individual_args.np_individual_size)
+    class GaggleRastriginProblem(Problem):
+        def evaluate(self, individual: Individual, *args, **kwargs) -> float:
+            chromo = individual.forward()
+            dimension = individual.individual_args.np_individual_size
+            rastrigin = - (dimension * len(chromo) + \
+                np.sum(chromo ** 2 - dimension * np.cos(2 * np.pi * chromo)))
+            return rastrigin
+        
+    ProblemFactory.register_problem(problem_type='custom', problem_name='Rastrigin', problem=GaggleRastriginProblem)
+    # ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,
+    #                                                  a=individual_args.np_individual_size)
 
     
     population_manager: PopulationManager = PopulationManager(ga_args, individual_args, sys_args=sys_args)
