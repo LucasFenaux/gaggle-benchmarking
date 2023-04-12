@@ -17,7 +17,7 @@ import gym
 
 def get_arg_parser():
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--population_size", default=10, type=int)
+    parser.add_argument("--population_size", default=100, type=int)
     parser.add_argument("--model_size", default="tiny", type=str)
     parser.add_argument("--device", default="cuda", type=str)
     return parser
@@ -50,6 +50,33 @@ class DQN(nn.Module):
         return qvalue
 
 
+
+class LargeDQN(nn.Module):
+    def __init__(self, num_inputs, num_outputs, hidden_size=16):
+        super(LargeDQN, self).__init__()
+        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
+        # The input dimension is the state dimention and the output dimension is the action dimension.
+        # This constructor function initializes the network by creating the different layers.
+
+        self.num_inputs = num_inputs
+        self.num_outputs = num_outputs
+
+        self.fc1 = nn.Linear(num_inputs, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, num_outputs)
+
+    def forward(self, x):
+        # The variable x denotes the input to the network.
+        # The function returns the q value for the given input.
+
+        x = x.view(-1, self.num_inputs)
+        x = F.sigmoid(self.fc1(x))
+        x = F.sigmoid(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+
 args = get_arg_parser().parse_args()
 environment = gym.make('CartPole-v1')
 
@@ -60,10 +87,15 @@ if args.model_size == "tiny":
     hidden_size = 4
 elif args.model_size == "small":
     hidden_size = 16
-else:
+elif args.model_size == "medium":
     hidden_size = 64
+else:
+    hidden_size = 128
 
-model = DQN(num_inputs=num_inputs, num_outputs=num_outputs, hidden_size=hidden_size).to(device)
+if args.model_size == "large":
+    model = LargeDQN(num_inputs=num_inputs, num_outputs=num_outputs, hidden_size=hidden_size).to(device)
+else:
+    model = DQN(num_inputs=num_inputs, num_outputs=num_outputs, hidden_size=hidden_size).to(device)
 times = []
 
 steps = 10
@@ -162,7 +194,7 @@ print("Index of the best solution : {solution_idx}".format(solution_idx=solution
 print(f"Times: {times}")
 
 dir = 'Results/'
-filename = '{}_cartpole_pygad_pop_size_{}.p'.format(args.model_size, args.population_size)
+filename = 'pygad_model_size_{}.p'.format(args.model_size)
 if not os.path.exists(dir):
     os.makedirs(dir)
 with open(os.path.join(dir,filename), 'wb') as f:

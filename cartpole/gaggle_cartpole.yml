@@ -11,8 +11,8 @@ problem_args:
   stop_on_done: False
 
 ga_args:
-  population_size: 200
-  num_parents: 200
+  population_size: 100
+  num_parents: 100
   crossover: uniform
   selection: weighted
   mutation: uniform
