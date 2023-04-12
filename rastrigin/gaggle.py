@@ -22,6 +22,7 @@ from src.ga import GA
 from src.ga.ga_factory import GAFactory
 import transformers
 import pickle
+import torch
 import numpy as np
 from leap_ec.real_rep.problems import ScalarProblem
 
@@ -86,12 +87,13 @@ def train(outdir_args: OutdirArgs,
     print_dict_highlighted(vars(problem_args))
 
     class GaggleRastriginProblem(Problem):
+        @torch.no_grad()
         def evaluate(self, individual: Individual, *args, **kwargs) -> float:
             chromo = individual.forward()
             dimension = individual.individual_args.np_individual_size
             rastrigin = - (dimension * len(chromo) + \
-                np.sum(chromo ** 2 - dimension * np.cos(2 * np.pi * chromo)))
-            return rastrigin
+                torch.sum(chromo ** 2 - dimension * torch.cos(2 * torch.pi * chromo)))
+            return rastrigin.cpu().item()
         
     ProblemFactory.register_problem(problem_type='custom', problem_name='Rastrigin', problem=GaggleRastriginProblem)
     # ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,

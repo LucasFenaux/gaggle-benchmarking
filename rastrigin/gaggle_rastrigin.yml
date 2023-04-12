@@ -2,8 +2,8 @@ problem_args:
   problem_name: 'Rastrigin'
 
 ga_args:
-  population_size: 200
-  num_parents: 200
+  population_size: 100
+  num_parents: 100
   crossover: uniform
   selection: weighted
   mutation: uniform
@@ -17,7 +17,7 @@ individual_args:
   param_lower_bound: -5.12
   param_upper_bound: 5.12
   np_individual_size: 10
-  individual_name: numpy
+  individual_name: pytorch
 
 sys_args:
   device: cpu
