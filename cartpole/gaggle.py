@@ -26,7 +26,7 @@ class IndividualArgsMod(IndividualArgs):
     model_name: str = field(default="lenet", metadata={
         "help": "name of the model architecture. Note that not all (resolution, model architecture)"
                 "combinations are implemented. Please see the 'get_base_model' method of this class.",
-        "choices": ["resnet20", "resnet32", "resnet44", "lenet", "snet", "custom", "dqn"]
+        "choices": ["resnet20", "resnet32", "resnet44", "lenet", "snet", "custom", "dqn", "large_dqn"]
     })
 
 ConfigArgs.update(IndividualArgs.CONFIG_KEY, IndividualArgsMod)
@@ -63,6 +63,38 @@ class DQN(nn.Module):
 
 
 IndividualArgsMod.update("dqn", DQN)
+
+
+class LargeDQN(nn.Module):
+    def __init__(self, num_inputs, num_outputs, hidden_size=16):
+        super(LargeDQN, self).__init__()
+        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
+        # The input dimension is the state dimention and the output dimension is the action dimension.
+        # This constructor function initializes the network by creating the different layers.
+
+        self.num_inputs = num_inputs
+        self.num_outputs = num_outputs
+
+        self.fc1 = nn.Linear(num_inputs, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, num_outputs)
+
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform(m.weight)
+
+    def forward(self, x):
+        # The variable x denotes the input to the network.
+        # The function returns the q value for the given input.
+
+        x = x.view(-1, self.num_inputs)
+        x = F.sigmoid(self.fc1(x))
+        x = F.sigmoid(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+IndividualArgsMod.update("large_dqn", LargeDQN)
 
 
 def parse_args():
