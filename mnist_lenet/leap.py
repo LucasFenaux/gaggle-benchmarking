@@ -15,7 +15,7 @@ import pickle
 
 from src.problem.dataset import MNIST
 from src.base_nns.lenet import LeNet5
-from src.arguments import ProblemArgs, OutdirArgs
+from src.arguments import ProblemArgs, OutdirArgs, SysArgs
 
 from leap_ec import Individual, Representation, test_env_var, Decoder
 from leap_ec import probe, ops
@@ -28,7 +28,7 @@ import argparse
 
 def get_arg_parser():
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--population-size", dest="population_size", default=200, type=int)
+    parser.add_argument("--population_size", default=200, type=int)
     return parser
 
 ##############################
@@ -71,6 +71,8 @@ if __name__ == '__main__':
     problem = ClassificationProblem(fitness_function=accuracy, train_data=data_input, train_targets=data_target,
                                     train_transform=train_transforms, device=device)
     timing_probe = TimingProbe()
+    print(f"expected_num_mutations = {decoder.length*0.01}")
+
     with open('./genomes.csv', 'w') as genomes_file:
 
         ea = generational_ea(max_generations=generations, pop_size=pop_size,
@@ -88,7 +90,7 @@ if __name__ == '__main__':
                                 ops.proportional_selection,
                                 ops.clone,
                                 ops.uniform_crossover(p_xover=0.5),
-                                mutate_uniform(low=low, high=high, expected_num_mutations=617),
+                                mutate_uniform(low=low, high=high, expected_num_mutations=decoder.length*0.01),
                                 ops.evaluate,
                                 ops.pool(size=pop_size),
                                 timing_probe,  # we're nice we don't include all of their extra logging in the computation

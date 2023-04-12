@@ -14,7 +14,7 @@ import argparse
 
 def get_arg_parser():
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--dimension", dest="dimension", default=1000, type=int)
+    parser.add_argument("--dimension", dest="dimension", default=2, type=int)
     return parser
 
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # but also wrap an argmax around the networks so their
     # output is a single integer
     decoder = IdentityDecoder()
-    problem = RastriginProblem(args.dimension)
+    problem = RastriginProblem(args.dimension, maximize=False)
     timing_probe = TimingProbe()
     with open('./genomes.csv', 'w') as genomes_file:
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
                             # The operator pipeline.
                             pipeline=[
                                 timing_probe,
-                                ops.proportional_selection,
+                                ops.proportional_selection(offset="pop-min"),
                                 ops.clone,
                                 ops.uniform_crossover(p_xover=0.5),
                                 mutate_uniform(low=low, high=high, expected_num_mutations=args.dimension*0.01),

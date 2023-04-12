@@ -126,6 +126,221 @@ class UpdatedEnvironmentProblem(ScalarProblem):
         return self.fitness(observations, rewards)
 
 
+class UpdatedTorchEnvironmentProblem(ScalarProblem):
+    """Defines a fitness function over :class:`~leap_ec.executable.phenotype.Executable` by
+    evaluating them within a given environment.
+
+    :param int runs: The number of independent runs to aggregate data over.
+    :param int steps: The number of steps to run the simulation for within each run.
+    :param environment: A simulation environment corresponding to the OpenAI Gym environment interface.
+    :param behavior_fitness: A function
+    """
+
+    def __init__(self, runs: int, steps: int, environment, fitness_type: str,
+                 gui: bool, stop_on_done=True, maximize=True):
+        assert (runs > 0)
+        assert (steps > 0)
+        assert (environment is not None)
+        assert (fitness_type is not None)
+        super().__init__(maximize)
+        self.runs = runs
+        self.steps = steps
+        self.environment = environment
+        self.environment._max_episode_steps = steps  # This may not work with all environments.
+        self.stop_on_done = stop_on_done
+        self.gui = gui
+        if fitness_type == 'reward':
+            self.fitness = UpdatedEnvironmentProblem._reward_fitness
+        elif fitness_type == 'survival':
+            self.fitness = UpdatedEnvironmentProblem._survival_fitness
+        else:
+            raise ValueError(f"Unrecognized fitness type: '{fitness_type}'")
+
+    @property
+    def num_inputs(self):
+        """Return the number of dimensions in the environment's input space."""
+        self.space_dimensions(self.environment.observation_space)
+
+    @property
+    def num_outputs(self):
+        """Return the number of dimensions in the environment's action space."""
+        self.space_dimensions(self.environment.action_space)
+
+    @classmethod
+    def _reward_fitness(cls, observations, rewards):
+        """Compute fitness by summing the rewards across all runs."""
+        sums = [sum(run) for run in rewards]
+        return np.mean(sums)
+
+    @classmethod
+    def _survival_fitness(cls, observations, rewards):
+        """Compute fitness as the average length of the runs."""
+        return np.mean([len(o) for o in observations])
+
+    @staticmethod
+    def space_dimensions(observation_space) -> int:
+        """Helper to get the number of dimensions (variables) in an OpenAI Gym space.
+
+        The point of this helper is that it works on simple spaces:
+
+        >>> from gym import spaces
+        >>> discrete = spaces.Discrete(8)
+        >>> EnvironmentProblem.space_dimensions(discrete)
+        1
+
+        Box spaces:
+
+        >>> box = spaces.Box(low=-1.0, high=2.0, shape=(3, 4), dtype=np.float32)
+        >>> EnvironmentProblem.space_dimensions(box)
+        12
+
+        And Tuple spaces:
+
+        >>> tup = spaces.Tuple([discrete, box])
+        >>> EnvironmentProblem.space_dimensions(tup)
+        13
+        """
+        if hasattr(observation_space, 'spaces'):
+            # If we're a Tuple space, count the inputs across each space in the Tuple
+            return sum([int(np.prod(s.shape)) for s in observation_space.spaces])
+        else:
+            # Otherwise just look at the shape of the space directly
+            return int(np.prod(observation_space.shape))
+
+    def evaluate(self, executable):
+        """Run the environmental simulation using `executable` as a controller,
+        and use the resulting observations & rewards to compute a fitness value."""
+        observations = []
+        rewards = []
+        for r in range(self.runs):
+            observation, _ = self.environment.reset()
+            observation = torch.Tensor(observation).to(executable.device)
+            run_observations = [observation]
+            run_rewards = []
+            for t in range(self.steps):
+                if self.gui:
+                    self.environment.render()
+                action = torch.argmax(executable(observation)).cpu().item()
+                observation, reward, done, info, _ = self.environment.step(action)
+                observation = torch.Tensor(observation).to(executable.device)
+                run_observations.append(observation)
+                run_rewards.append(reward)
+                if self.stop_on_done and done:
+                    break
+            observations.append(run_observations)
+            rewards.append(run_rewards)
+        return self.fitness(observations, rewards)
+
+
+class SequentialUpdatedTorchEnvironmentProblem(ScalarProblem):
+    """Defines a fitness function over :class:`~leap_ec.executable.phenotype.Executable` by
+    evaluating them within a given environment.
+
+    :param int runs: The number of independent runs to aggregate data over.
+    :param int steps: The number of steps to run the simulation for within each run.
+    :param environment: A simulation environment corresponding to the OpenAI Gym environment interface.
+    :param behavior_fitness: A function
+    """
+
+    def __init__(self, runs: int, steps: int, environment, fitness_type: str,
+                 gui: bool, stop_on_done=True, maximize=True):
+        assert (runs > 0)
+        assert (steps > 0)
+        assert (environment is not None)
+        assert (fitness_type is not None)
+        super().__init__(maximize)
+        self.runs = runs
+        self.steps = steps
+        self.environment = environment
+        self.environment._max_episode_steps = steps  # This may not work with all environments.
+        self.stop_on_done = stop_on_done
+        self.gui = gui
+        if fitness_type == 'reward':
+            self.fitness = UpdatedEnvironmentProblem._reward_fitness
+        elif fitness_type == 'survival':
+            self.fitness = UpdatedEnvironmentProblem._survival_fitness
+        else:
+            raise ValueError(f"Unrecognized fitness type: '{fitness_type}'")
+
+    @property
+    def num_inputs(self):
+        """Return the number of dimensions in the environment's input space."""
+        self.space_dimensions(self.environment.observation_space)
+
+    @property
+    def num_outputs(self):
+        """Return the number of dimensions in the environment's action space."""
+        self.space_dimensions(self.environment.action_space)
+
+    @classmethod
+    def _reward_fitness(cls, observations, rewards):
+        """Compute fitness by summing the rewards across all runs."""
+        sums = [sum(run) for run in rewards]
+        return np.mean(sums)
+
+    @classmethod
+    def _survival_fitness(cls, observations, rewards):
+        """Compute fitness as the average length of the runs."""
+        return np.mean([len(o) for o in observations])
+
+    @staticmethod
+    def space_dimensions(observation_space) -> int:
+        """Helper to get the number of dimensions (variables) in an OpenAI Gym space.
+
+        The point of this helper is that it works on simple spaces:
+
+        >>> from gym import spaces
+        >>> discrete = spaces.Discrete(8)
+        >>> EnvironmentProblem.space_dimensions(discrete)
+        1
+
+        Box spaces:
+
+        >>> box = spaces.Box(low=-1.0, high=2.0, shape=(3, 4), dtype=np.float32)
+        >>> EnvironmentProblem.space_dimensions(box)
+        12
+
+        And Tuple spaces:
+
+        >>> tup = spaces.Tuple([discrete, box])
+        >>> EnvironmentProblem.space_dimensions(tup)
+        13
+        """
+        if hasattr(observation_space, 'spaces'):
+            # If we're a Tuple space, count the inputs across each space in the Tuple
+            return sum([int(np.prod(s.shape)) for s in observation_space.spaces])
+        else:
+            # Otherwise just look at the shape of the space directly
+            return int(np.prod(observation_space.shape))
+
+    def evaluate(self, executable):
+        """Run the environmental simulation using `executable` as a controller,
+        and use the resulting observations & rewards to compute a fitness value."""
+        observations = []
+        rewards = []
+        for r in range(self.runs):
+            observation, _ = self.environment.reset()
+            observation = torch.Tensor(observation).to(executable.device).unsqueeze(0).unsqueeze(0)
+            run_observations = [observation]
+            observation = torch.cat(run_observations, dim=1)
+            run_rewards = []
+            for t in range(self.steps):
+                if self.gui:
+                    self.environment.render()
+                action = executable(observation)
+                action = torch.argmax(action[:, -1, :]).squeeze().cpu().item()
+                observation, reward, done, info, _ = self.environment.step(action)
+                observation = torch.Tensor(observation).to(executable.device).unsqueeze(0).unsqueeze(0)
+                run_observations.append(observation)
+                observation = torch.cat(run_observations, dim=1)
+                run_rewards.append(reward)
+                if self.stop_on_done and done:
+                    break
+            observations.append(run_observations)
+            rewards.append(run_rewards)
+        return self.fitness(observations, rewards)
+
+
 def accuracy(y_pred, y) -> float:
     return (y_pred.argmax(1) == y).float().mean()
 
@@ -223,6 +438,7 @@ class PytorchDecoder(Decoder):
     def decode(self, genome, *args, **kwargs):
         model = self.model_fn(*self.args, **self.kwargs)
         model.load_state_dict(torchga.model_weights_as_dict(model, genome))
+        model.device = self.device
         return model.to(self.device)
 
 
