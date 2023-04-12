@@ -48,10 +48,6 @@ class DQN(nn.Module):
         self.fc1 = nn.Linear(num_inputs, hidden_size)
         self.fc2 = nn.Linear(hidden_size, num_outputs)
 
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform(m.weight)
-
     def forward(self, x):
         # The variable x denotes the input to the network.
         # The function returns the q value for the given input.
@@ -78,10 +74,6 @@ class LargeDQN(nn.Module):
         self.fc1 = nn.Linear(num_inputs, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, num_outputs)
-
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform(m.weight)
 
     def forward(self, x):
         # The variable x denotes the input to the network.
@@ -133,10 +125,12 @@ def train(outdir_args: OutdirArgs,
         hidden_size = 4
     elif individual_args.model_size == "small":
         hidden_size = 16
-    else:
+    elif individual_args.model_size == "medium":
         hidden_size = 64
+    else:
+        hidden_size = 128
 
-    if individual_args.model_name == "dqn":
+    if individual_args.model_name == "dqn" or individual_args.model_name == "large_dqn":
         kwargs = {"num_inputs": num_inputs,
                   "num_outputs": num_outputs,
                   "hidden_size": hidden_size}
@@ -150,7 +144,7 @@ def train(outdir_args: OutdirArgs,
     trainer.train()
     times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
-    filename = '{}_cartpole_gaggle_pop_size_{}.p'.format(individual_args.model_size, ga_args.population_size)
+    filename = 'gaggle_model_size_{}.p'.format(individual_args.model_size)
     if not os.path.exists(dir):
         os.makedirs(dir)
     with open(os.path.join(dir,filename), 'wb') as f:
