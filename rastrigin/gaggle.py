@@ -22,17 +22,20 @@ import transformers
 import pickle
 from leap_ec.real_rep.problems import RastriginProblem
 from dataclasses import dataclass, field
-    
-class ProblemArgsMod(ProblemArgs):
-     dimension: int = field(default=10, metadata={
-        "help": "dimension of rastrigin problem",
-    })
 
 
+# @dataclass
+# class ProblemArgsMod(ProblemArgs):
+#     dimension: int = field(default=10, metadata={
+#         "help": "dimension of rastrigin problem",
+#     })
+#
+#
+# ConfigArgs.update(ProblemArgs.CONFIG_KEY, ProblemArgsMod)
 
 
 def parse_args():
-    parser = transformers.HfArgumentParser((OutdirArgs, SysArgs, IndividualArgs, GAArgs, ProblemArgsMod,
+    parser = transformers.HfArgumentParser((OutdirArgs, SysArgs, IndividualArgs, GAArgs, ProblemArgs,
                                             ConfigArgs))
     return parser.parse_args_into_dataclasses()
 
@@ -41,20 +44,19 @@ def train(outdir_args: OutdirArgs,
           sys_args: SysArgs,
           individual_args: IndividualArgs,
           ga_args: GAArgs,
-          problem_args: ProblemArgsMod,
+          problem_args: ProblemArgs,
           config_args: ConfigArgs):
     """ Train a model from scratch on a data. """
     if config_args.exists():
-        dim = problem_args.dimension
         outdir_args = config_args.get_outdir_args()
         sys_args = config_args.get_sys_args()
         individual_args = config_args.get_individual_args()
         problem_args = config_args.get_problem_args()
         ga_args = config_args.get_ga_args()
-        problem_args.dimension = dim
-    print_dict_highlighted(vars(ga_args))
+    print_dict_highlighted(vars(problem_args))
 
-    ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem, a=problem_args.dimension)
+    ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,
+                                                     a=individual_args.np_individual_size)
 
     
     population_manager: PopulationManager = PopulationManager(ga_args, individual_args, sys_args=sys_args)
@@ -62,7 +64,7 @@ def train(outdir_args: OutdirArgs,
                                          problem_args=problem_args, sys_args=sys_args, outdir_args=outdir_args,
                                          individual_args=individual_args)
     trainer.train()
-    times = trainer.saved_metrics['train_metrics']['time taken']
+    times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
     filename = 'gaggle_dimension_{}.p'.format(problem_args.dimension)
     if not os.path.exists(dir):

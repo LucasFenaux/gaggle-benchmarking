@@ -16,7 +16,7 @@ import argparse
 
 def get_arg_parser():
     parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--population-size", dest="population_size", default=200, type=int)
+    parser.add_argument("--population_size", default=200, type=int)
     return parser
 
 
