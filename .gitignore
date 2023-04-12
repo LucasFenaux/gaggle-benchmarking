@@ -11,3 +11,5 @@ experiments/*
 
 *.gz
 *.cache
+
+*/Results/*
