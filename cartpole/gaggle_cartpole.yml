@@ -1,20 +1,28 @@
 individual_args:
-  model_name: lenet
+  model_name: dqn
+  individual_name: rl
+
+problem_args:
+  problem_name: cartpole
+  batch_size: -1
+  eval_batch_size: -1
+  steps: 10
+  runs: 5
+  stop_on_done: False
 
 ga_args:
-  population_size: 20
-  num_parents: 20
+  population_size: 200
+  num_parents: 200
   crossover: uniform
   selection: weighted
   mutation: uniform
   mutation_chance: 0.01
   elitism: 0.
-  generations: 10
-  eval_every_generation: 50
+  parent_survival_rate: 0.5
+  generations: 100
+  eval_every_generation: 1000
 
-env_args:
-  batch_size: 50000
-  eval_batch_size: 10000
+sys_args:
   device: cuda
 
 output_dir:

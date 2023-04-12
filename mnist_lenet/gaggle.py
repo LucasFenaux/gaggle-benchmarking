@@ -48,7 +48,7 @@ def train(outdir_args: OutdirArgs,
                                          problem_args=problem_args, sys_args=sys_args, outdir_args=outdir_args,
                                          individual_args=individual_args)
     trainer.train()
-    times = trainer.saved_metrics['train_metrics']['time taken']
+    times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
     filename = 'gaggle_pop_size_{}.p'.format(ga_args.population_size)
     if not os.path.exists(dir):
