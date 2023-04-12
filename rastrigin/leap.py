@@ -72,7 +72,7 @@ if __name__ == '__main__':
     args = get_arg_parser().parse_args()
     # Parameters
     runs_per_fitness_eval = 1
-    pop_size = 200
+    pop_size = 100
     low = -5.12
     high = 5.12
     generations = 100

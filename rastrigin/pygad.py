@@ -73,9 +73,9 @@ def callback_generation(ga_instance):
 
 args = get_arg_parser().parse_args()
 
-num_solutions = 200
+num_solutions = 100
 num_generations = 100
-num_parents_mating = 200
+num_parents_mating = 100
 keep_parents = 0
 keep_elitism = 0
 crossover = "uniform"
