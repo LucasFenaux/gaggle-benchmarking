@@ -90,7 +90,7 @@ def train(outdir_args: OutdirArgs,
         @torch.no_grad()
         def evaluate(self, individual: Individual, *args, **kwargs) -> float:
             chromo = individual.forward()
-            dimension = individual.individual_args.np_individual_size
+            dimension = individual.individual_args.individual_size
             rastrigin = - (dimension * len(chromo) + \
                 torch.sum(chromo ** 2 - dimension * torch.cos(2 * torch.pi * chromo)))
             return rastrigin.cpu().item()
