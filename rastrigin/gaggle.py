@@ -69,7 +69,7 @@ def train(outdir_args: OutdirArgs,
     trainer.train()
     times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
-    filename = 'gaggle_dimension_{}.p'.format(individual_args.np_individual_size)
+    filename = 'gaggle_dimension_{}.p'.format(individual_args.individual_size)
     if not os.path.exists(dir):
         os.makedirs(dir)
     with open(os.path.join(dir,filename), 'wb') as f:
