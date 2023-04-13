@@ -35,7 +35,7 @@ class RastriginProblem(ScalarProblem):
     """ Standard bounds."""
     bounds = (-5.12, 5.12)
     #NOTE we changed maximize to true
-    def __init__(self, a=1.0, maximize=True):
+    def __init__(self, a=10.0, maximize=True):
         super().__init__(maximize)
         self.a = a
     def evaluate(self, phenome):
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # but also wrap an argmax around the networks so their
     # output is a single integer
     decoder = IdentityDecoder()
-    problem = RastriginProblem(args.dimension, maximize=True)
+    problem = RastriginProblem(10., maximize=True)
     timing_probe = TimingProbe()
     with open('./genomes.csv', 'w') as genomes_file:
 

@@ -18,7 +18,7 @@ def get_arg_parser():
 times = []
 
 def fitness_func(solution, sol_idx):
-    return -(args.dimension * len(solution) + np.sum(solution ** 2 - args.dimension * np.cos(2 * np.pi * solution)))
+    return -(10. * len(solution) + np.sum(solution ** 2 - 10. * np.cos(2 * np.pi * solution)))
 
 def mod_roulette_wheel_selection(fitness, num_parents, ga_instance):
 
