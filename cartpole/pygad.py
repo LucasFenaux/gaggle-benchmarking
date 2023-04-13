@@ -89,10 +89,12 @@ elif args.model_size == "small":
     hidden_size = 16
 elif args.model_size == "medium":
     hidden_size = 64
-else:
+elif args.model_size == "large":
     hidden_size = 128
+else:
+    hidden_size = 256
 
-if args.model_size == "large":
+if args.model_size == "large" or args.model_size == "very_large":
     model = LargeDQN(num_inputs=num_inputs, num_outputs=num_outputs, hidden_size=hidden_size).to(device)
 else:
     model = DQN(num_inputs=num_inputs, num_outputs=num_outputs, hidden_size=hidden_size).to(device)

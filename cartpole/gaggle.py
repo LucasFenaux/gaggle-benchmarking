@@ -105,6 +105,7 @@ def train(outdir_args: OutdirArgs,
     if config_args.exists():
         pop_size = ga_args.population_size
         model_size = individual_args.model_size
+        model_name = individual_args.model_name
         device = sys_args.device
         outdir_args = config_args.get_outdir_args()
         sys_args = config_args.get_sys_args()
@@ -115,6 +116,7 @@ def train(outdir_args: OutdirArgs,
         ga_args.num_parents = pop_size
         individual_args.model_size = model_size
         sys_args.device = device
+        individual_args.model_name = model_name
 
     print_dict_highlighted(vars(problem_args))
     print_dict_highlighted(vars(sys_args))
@@ -127,8 +129,10 @@ def train(outdir_args: OutdirArgs,
         hidden_size = 16
     elif individual_args.model_size == "medium":
         hidden_size = 64
-    else:
+    elif individual_args.model_size == "large":
         hidden_size = 128
+    else:
+        hidden_size = 256
 
     if individual_args.model_name == "dqn" or individual_args.model_name == "large_dqn":
         kwargs = {"num_inputs": num_inputs,
