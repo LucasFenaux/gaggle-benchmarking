@@ -39,20 +39,20 @@ def train(outdir_args: OutdirArgs,
           config_args: ConfigArgs):
     """ Train a model from scratch on a data. """
     if config_args.exists():
-        dim = individual_args.np_individual_size
+        dim = individual_args.individual_size
         outdir_args = config_args.get_outdir_args()
         sys_args = config_args.get_sys_args()
         individual_args = config_args.get_individual_args()
         problem_args = config_args.get_problem_args()
         ga_args = config_args.get_ga_args()
-        individual_args.np_individual_size = dim
+        individual_args.individual_size = dim
     print_dict_highlighted(vars(problem_args))
 
     class GaggleRastriginProblem(Problem):
         @torch.no_grad()
         def evaluate(self, individual: Individual, *args, **kwargs) -> float:
             chromo = individual.forward()
-            dimension = individual.individual_args.np_individual_size
+            dimension = individual.individual_args.individual_size
             rastrigin = - (10 * dimension + \
                 torch.sum(chromo ** 2 - 10 * torch.cos(2 * torch.pi * chromo)))
             return rastrigin.cpu().item()
