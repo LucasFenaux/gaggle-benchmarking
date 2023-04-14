@@ -18,6 +18,8 @@ from src.ga.ga_factory import GAFactory
 import transformers
 import pickle
 from dataclasses import dataclass, field
+from models import DQN, LargeDQN
+
 
 @dataclass
 class IndividualArgsMod(IndividualArgs):
@@ -29,61 +31,11 @@ class IndividualArgsMod(IndividualArgs):
         "choices": ["resnet20", "resnet32", "resnet44", "lenet", "snet", "custom", "dqn", "large_dqn"]
     })
 
+
 ConfigArgs.update(IndividualArgs.CONFIG_KEY, IndividualArgsMod)
-
-import torch.nn as nn
-import torch.nn.functional as F
-
-
-class DQN(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size=16):
-        super(DQN, self).__init__()
-        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
-        # The input dimension is the state dimention and the output dimension is the action dimension.
-        # This constructor function initializes the network by creating the different layers.
-
-        self.num_inputs = num_inputs
-        self.num_outputs = num_outputs
-
-        self.fc1 = nn.Linear(num_inputs, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, num_outputs)
-
-    def forward(self, x):
-        # The variable x denotes the input to the network.
-        # The function returns the q value for the given input.
-
-        x = x.view(-1, self.num_inputs)
-        x = F.sigmoid(self.fc1(x))
-        qvalue = F.sigmoid(self.fc2(x))  # wouldn't usually do a second sigmoid but leap does it so we have to
-        return qvalue
 
 
 IndividualArgsMod.update("dqn", DQN)
-
-
-class LargeDQN(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size=16):
-        super(LargeDQN, self).__init__()
-        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
-        # The input dimension is the state dimention and the output dimension is the action dimension.
-        # This constructor function initializes the network by creating the different layers.
-
-        self.num_inputs = num_inputs
-        self.num_outputs = num_outputs
-
-        self.fc1 = nn.Linear(num_inputs, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, num_outputs)
-
-    def forward(self, x):
-        # The variable x denotes the input to the network.
-        # The function returns the q value for the given input.
-
-        x = x.view(-1, self.num_inputs)
-        x = F.sigmoid(self.fc1(x))
-        x = F.sigmoid(self.fc2(x))
-        x = self.fc3(x)
-        return x
 
 
 IndividualArgsMod.update("large_dqn", LargeDQN)

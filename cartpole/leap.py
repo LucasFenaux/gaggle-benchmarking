@@ -20,60 +20,7 @@ from leap_ec.real_rep.initializers import create_real_vector
 from new_leap_operators import UpdatedEnvironmentProblem, UpdatedTorchEnvironmentProblem
 import argparse
 from new_leap_operators import PytorchDecoder, TimingProbe, mutate_uniform, build_probes
-import torch.nn as nn
-import torch.nn.functional as F
-
-
-class DQN(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size=16):
-        super(DQN, self).__init__()
-        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
-        # The input dimension is the state dimention and the output dimension is the action dimension.
-        # This constructor function initializes the network by creating the different layers.
-
-        self.num_inputs = num_inputs
-        self.num_outputs = num_outputs
-
-        self.fc1 = nn.Linear(num_inputs, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, num_outputs)
-
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform(m.weight)
-
-    def forward(self, x):
-        # The variable x denotes the input to the network.
-        # The function returns the q value for the given input.
-
-        x = x.view(-1, self.num_inputs)
-        x = F.sigmoid(self.fc1(x))
-        qvalue = F.sigmoid(self.fc2(x))  # wouldn't usually do a second sigmoid but leap does it so we have to
-        return qvalue
-
-
-class LargeDQN(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size=16):
-        super(LargeDQN, self).__init__()
-        # The inputs are two integers giving the dimensions of the inputs and outputs respectively.
-        # The input dimension is the state dimention and the output dimension is the action dimension.
-        # This constructor function initializes the network by creating the different layers.
-
-        self.num_inputs = num_inputs
-        self.num_outputs = num_outputs
-
-        self.fc1 = nn.Linear(num_inputs, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, num_outputs)
-
-    def forward(self, x):
-        # The variable x denotes the input to the network.
-        # The function returns the q value for the given input.
-
-        x = x.view(-1, self.num_inputs)
-        x = F.sigmoid(self.fc1(x))
-        x = F.sigmoid(self.fc2(x))
-        x = self.fc3(x)
-        return x
+from models import DQN, LargeDQN
 
 
 def get_arg_parser():
@@ -82,20 +29,6 @@ def get_arg_parser():
     parser.add_argument("--model_size", default="tiny")
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
     return parser
-
-args = get_arg_parser().parse_args()
-device = args.device
-# Parameters
-runs_per_fitness_eval = 5
-simulation_steps = 10
-pop_size = args.population_size
-
-gui = False  # Change to true to watch the cart-pole visualization
-low = -1.
-high = 1.
-
-generations = 100
-
 
 ##############################
 # Function build_probes()
@@ -135,7 +68,295 @@ def build_tiny_probes(genomes_file):
     return probes
 
 
-def run_tiny_network():
+def get_probes(model_size):
+    if model_size == "tiny":
+        return build_tiny_probes
+    else:
+        return build_probes
+
+
+def get_problem(model_size):
+    if model_size == "tiny":
+        return UpdatedEnvironmentProblem
+    else:
+        return UpdatedTorchEnvironmentProblem
+
+
+# def run_tiny_network():
+#     num_hidden_nodes = 4
+#     # Load the OpenAI Gym simulation
+#     environment = gym.make('CartPole-v1')
+#
+#     # Representation
+#     num_inputs = 4
+#     num_actions = environment.action_space.n
+#     print(num_actions)
+#     # Decode genomes into a feed-forward neural network,
+#     # but also wrap an argmax around the networks so their
+#     # output is a single integer
+#     decoder = executable.WrapperDecoder(
+#                 wrapped_decoder=neural_network.SimpleNeuralNetworkDecoder(
+#                     shape=(num_inputs, num_hidden_nodes, num_actions)
+#                 ),
+#                 decorator=executable.ArgmaxExecutable)
+#     timing_probe = TimingProbe()
+#     print(f"Num params:{decoder.wrapped_decoder.length}")
+#     with open('./genomes.csv', 'w') as genomes_file:
+#
+#         ea = generational_ea(max_generations=generations, pop_size=pop_size,
+#                             # Solve a problem that executes agents in the
+#                             # environment and obtains fitness from it
+#                             problem=UpdatedEnvironmentProblem(
+#                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+#                                 stop_on_done=False),
+#
+#                             representation=Representation(
+#                                 initialize=create_real_vector(bounds=([[-1, 1]]*decoder.wrapped_decoder.length)),
+#                                 decoder=decoder),
+#
+#                             # The operator pipeline.
+#                             pipeline=[
+#                                 timing_probe,
+#                                 ops.proportional_selection,
+#                                 ops.clone,
+#                                 ops.uniform_crossover,
+#                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01*decoder.wrapped_decoder.length),
+#                                 ops.evaluate,
+#                                 ops.pool(size=pop_size),
+#                                 timing_probe,
+#                                 *build_tiny_probes(genomes_file)  # Inserting all the probes at the end
+#                             ])
+#         list(ea)
+#     times = timing_probe.buffer
+#     dir = 'Results/'
+#     filename = 'leap_model_size_{}.p'.format(args.model_size)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+#     with open(os.path.join(dir, filename), 'wb') as f:
+#         pickle.dump(times, f)
+#
+#
+# def run_small_network():
+#     # Load the OpenAI Gym simulation
+#     environment = gym.make('CartPole-v1')
+#     # Representation
+#     num_actions = environment.action_space.n
+#     print(num_actions)
+#     # Decode genomes into a feed-forward neural network,
+#     # but also wrap an argmax around the networks so their
+#     # output is a single integer
+#     # device = torch.device("cuda")
+#
+#     decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=16)
+#
+#     timing_probe = TimingProbe()
+#     print(f"expected_num_mutations = {decoder.length*0.01}")
+#
+#     with open('./genomes.csv', 'w') as genomes_file:
+#         ea = generational_ea(max_generations=generations, pop_size=pop_size,
+#                              # Solve a problem that executes agents in the
+#                              # environment and obtains fitness from it
+#                              problem=UpdatedTorchEnvironmentProblem(
+#                                  runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+#                                  stop_on_done=False),
+#
+#                              representation=Representation(
+#                                  initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
+#                                  decoder=decoder),
+#
+#                              # The operator pipeline.
+#                              pipeline=[
+#                                  timing_probe,
+#                                  ops.proportional_selection,
+#                                  ops.clone,
+#                                  ops.uniform_crossover,
+#                                  mutate_uniform(low=low, high=high, expected_num_mutations=0.01*decoder.length),
+#                                  ops.evaluate,
+#                                  ops.pool(size=pop_size),
+#                                  timing_probe,
+#                                  *build_probes(genomes_file)  # Inserting all the probes at the end
+#                              ])
+#         list(ea)
+#
+#     times = timing_probe.buffer
+#     dir = 'Results/'
+#     filename = 'leap_model_size_{}.p'.format(args.model_size)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+#     with open(os.path.join(dir, filename), 'wb') as f:
+#         pickle.dump(times, f)
+#
+#
+# def run_medium_network():
+#     # Load the OpenAI Gym simulation
+#     environment = gym.make('CartPole-v1')
+#     # Representation
+#     num_actions = environment.action_space.n
+#     print(num_actions)
+#     # Decode genomes into a feed-forward neural network,
+#     # but also wrap an argmax around the networks so their
+#     # output is a single integer
+#     # device = torch.device("cuda")
+#
+#     decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=64)
+#
+#     timing_probe = TimingProbe()
+#     print(f"expected_num_mutations = {decoder.length * 0.01}")
+#
+#     with open('./genomes.csv', 'w') as genomes_file:
+#         ea = generational_ea(max_generations=generations, pop_size=pop_size,
+#                              # Solve a problem that executes agents in the
+#                              # environment and obtains fitness from it
+#                              problem=UpdatedTorchEnvironmentProblem(
+#                                  runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+#                                  stop_on_done=False),
+#
+#                              representation=Representation(
+#                                  initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
+#                                  decoder=decoder),
+#
+#                              # The operator pipeline.
+#                              pipeline=[
+#                                  timing_probe,
+#                                  ops.proportional_selection,
+#                                  ops.clone,
+#                                  ops.uniform_crossover,
+#                                  mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
+#                                  ops.evaluate,
+#                                  ops.pool(size=pop_size),
+#                                  timing_probe,
+#                                  *build_probes(genomes_file)  # Inserting all the probes at the end
+#                              ])
+#         list(ea)
+#
+#     times = timing_probe.buffer
+#     dir = 'Results/'
+#     filename = 'leap_model_size_{}.p'.format(args.model_size)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+#     with open(os.path.join(dir, filename), 'wb') as f:
+#         pickle.dump(times, f)
+#
+#
+# def run_large_network():
+#     # Load the OpenAI Gym simulation
+#     environment = gym.make('CartPole-v1')
+#     # Representation
+#     num_actions = environment.action_space.n
+#     print(num_actions)
+#     # Decode genomes into a feed-forward neural network,
+#     # but also wrap an argmax around the networks so their
+#     # output is a single integer
+#     # device = torch.device("cuda")
+#
+#     decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=128)
+#
+#     timing_probe = TimingProbe()
+#     print(f"expected_num_mutations = {decoder.length * 0.01}")
+#
+#     with open('./genomes.csv', 'w') as genomes_file:
+#         ea = generational_ea(max_generations=generations, pop_size=pop_size,
+#                              # Solve a problem that executes agents in the
+#                              # environment and obtains fitness from it
+#                              problem=UpdatedTorchEnvironmentProblem(
+#                                  runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+#                                  stop_on_done=False),
+#
+#                              representation=Representation(
+#                                  initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
+#                                  decoder=decoder),
+#
+#                              # The operator pipeline.
+#                              pipeline=[
+#                                  timing_probe,
+#                                  ops.proportional_selection,
+#                                  ops.clone,
+#                                  ops.uniform_crossover,
+#                                  mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
+#                                  ops.evaluate,
+#                                  ops.pool(size=pop_size),
+#                                  timing_probe,
+#                                  *build_probes(genomes_file)  # Inserting all the probes at the end
+#                              ])
+#         list(ea)
+#
+#     times = timing_probe.buffer
+#     dir = 'Results/'
+#     filename = 'leap_model_size_{}.p'.format(args.model_size)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+#     with open(os.path.join(dir, filename), 'wb') as f:
+#         pickle.dump(times, f)
+#
+#
+# def run_very_large_network():
+#     # Load the OpenAI Gym simulation
+#     environment = gym.make('CartPole-v1')
+#     # Representation
+#     num_actions = environment.action_space.n
+#     print(num_actions)
+#     # Decode genomes into a feed-forward neural network,
+#     # but also wrap an argmax around the networks so their
+#     # output is a single integer
+#     # device = torch.device("cuda")
+#
+#     decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=256)
+#
+#     timing_probe = TimingProbe()
+#     print(f"expected_num_mutations = {decoder.length * 0.01}")
+#
+#     with open('./genomes.csv', 'w') as genomes_file:
+#         ea = generational_ea(max_generations=generations, pop_size=pop_size,
+#                              # Solve a problem that executes agents in the
+#                              # environment and obtains fitness from it
+#                              problem=UpdatedTorchEnvironmentProblem(
+#                                  runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+#                                  stop_on_done=False),
+#
+#                              representation=Representation(
+#                                  initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
+#                                  decoder=decoder),
+#
+#                              # The operator pipeline.
+#                              pipeline=[
+#                                  timing_probe,
+#                                  ops.proportional_selection,
+#                                  ops.clone,
+#                                  ops.uniform_crossover,
+#                                  mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
+#                                  ops.evaluate,
+#                                  ops.pool(size=pop_size),
+#                                  timing_probe,
+#                                  *build_probes(genomes_file)  # Inserting all the probes at the end
+#                              ])
+#         list(ea)
+#
+#     times = timing_probe.buffer
+#     dir = 'Results/'
+#     filename = 'leap_model_size_{}.p'.format(args.model_size)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+#     with open(os.path.join(dir, filename), 'wb') as f:
+#         pickle.dump(times, f)
+
+
+##############################
+# Entry point
+##############################
+if __name__ == '__main__':
+    args = get_arg_parser().parse_args()
+    device = args.device
+    # Parameters
+    runs_per_fitness_eval = 5
+    simulation_steps = 10
+    pop_size = args.population_size
+
+    gui = False  # Change to true to watch the cart-pole visualization
+    low = -1.
+    high = 1.
+
+    generations = 100
+
     num_hidden_nodes = 4
     # Load the OpenAI Gym simulation
     environment = gym.make('CartPole-v1')
@@ -144,268 +365,77 @@ def run_tiny_network():
     num_inputs = 4
     num_actions = environment.action_space.n
     print(num_actions)
-    # Decode genomes into a feed-forward neural network,
-    # but also wrap an argmax around the networks so their
-    # output is a single integer
-    decoder = executable.WrapperDecoder(
-                wrapped_decoder=neural_network.SimpleNeuralNetworkDecoder(
-                    shape=(num_inputs, num_hidden_nodes, num_actions)
-                ),
-                decorator=executable.ArgmaxExecutable)
-    timing_probe = TimingProbe()
-    print(f"Num params:{decoder.wrapped_decoder.length}")
-    with open('./genomes.csv', 'w') as genomes_file:
-
-        ea = generational_ea(max_generations=generations, pop_size=pop_size,
-                            # Solve a problem that executes agents in the
-                            # environment and obtains fitness from it
-                            problem=UpdatedEnvironmentProblem(
-                                runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
-                                stop_on_done=False),
-
-                            representation=Representation(
-                                initialize=create_real_vector(bounds=([[-1, 1]]*decoder.wrapped_decoder.length)),
-                                decoder=decoder),
-
-                            # The operator pipeline.
-                            pipeline=[
-                                timing_probe,
-                                ops.proportional_selection,
-                                ops.clone,
-                                ops.uniform_crossover,
-                                mutate_uniform(low=low, high=high, expected_num_mutations=0.01*decoder.wrapped_decoder.length),
-                                ops.evaluate,
-                                ops.pool(size=pop_size),
-                                timing_probe,
-                                *build_tiny_probes(genomes_file)  # Inserting all the probes at the end
-                            ])
-        list(ea)
-    times = timing_probe.buffer
-    dir = 'Results/'
-    filename = 'leap_model_size_{}.p'.format(args.model_size)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    with open(os.path.join(dir, filename), 'wb') as f:
-        pickle.dump(times, f)
-
-
-def run_small_network():
-    # Load the OpenAI Gym simulation
-    environment = gym.make('CartPole-v1')
-    # Representation
-    num_actions = environment.action_space.n
-    print(num_actions)
-    # Decode genomes into a feed-forward neural network,
-    # but also wrap an argmax around the networks so their
-    # output is a single integer
-    # device = torch.device("cuda")
-
-    decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=16)
 
     timing_probe = TimingProbe()
-    print(f"expected_num_mutations = {decoder.length*0.01}")
 
-    with open('./genomes.csv', 'w') as genomes_file:
-        ea = generational_ea(max_generations=generations, pop_size=pop_size,
-                             # Solve a problem that executes agents in the
-                             # environment and obtains fitness from it
-                             problem=UpdatedTorchEnvironmentProblem(
-                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
-                                 stop_on_done=False),
-
-                             representation=Representation(
-                                 initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
-                                 decoder=decoder),
-
-                             # The operator pipeline.
-                             pipeline=[
-                                 timing_probe,
-                                 ops.proportional_selection,
-                                 ops.clone,
-                                 ops.uniform_crossover,
-                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01*decoder.length),
-                                 ops.evaluate,
-                                 ops.pool(size=pop_size),
-                                 timing_probe,
-                                 *build_probes(genomes_file)  # Inserting all the probes at the end
-                             ])
-        list(ea)
-
-    times = timing_probe.buffer
-    dir = 'Results/'
-    filename = 'leap_model_size_{}.p'.format(args.model_size)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    with open(os.path.join(dir, filename), 'wb') as f:
-        pickle.dump(times, f)
-
-
-def run_medium_network():
-    # Load the OpenAI Gym simulation
-    environment = gym.make('CartPole-v1')
-    # Representation
-    num_actions = environment.action_space.n
-    print(num_actions)
-    # Decode genomes into a feed-forward neural network,
-    # but also wrap an argmax around the networks so their
-    # output is a single integer
-    # device = torch.device("cuda")
-
-    decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=64)
-
-    timing_probe = TimingProbe()
-    print(f"expected_num_mutations = {decoder.length * 0.01}")
-
-    with open('./genomes.csv', 'w') as genomes_file:
-        ea = generational_ea(max_generations=generations, pop_size=pop_size,
-                             # Solve a problem that executes agents in the
-                             # environment and obtains fitness from it
-                             problem=UpdatedTorchEnvironmentProblem(
-                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
-                                 stop_on_done=False),
-
-                             representation=Representation(
-                                 initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
-                                 decoder=decoder),
-
-                             # The operator pipeline.
-                             pipeline=[
-                                 timing_probe,
-                                 ops.proportional_selection,
-                                 ops.clone,
-                                 ops.uniform_crossover,
-                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
-                                 ops.evaluate,
-                                 ops.pool(size=pop_size),
-                                 timing_probe,
-                                 *build_probes(genomes_file)  # Inserting all the probes at the end
-                             ])
-        list(ea)
-
-    times = timing_probe.buffer
-    dir = 'Results/'
-    filename = 'leap_model_size_{}.p'.format(args.model_size)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    with open(os.path.join(dir, filename), 'wb') as f:
-        pickle.dump(times, f)
-
-
-def run_large_network():
-    # Load the OpenAI Gym simulation
-    environment = gym.make('CartPole-v1')
-    # Representation
-    num_actions = environment.action_space.n
-    print(num_actions)
-    # Decode genomes into a feed-forward neural network,
-    # but also wrap an argmax around the networks so their
-    # output is a single integer
-    # device = torch.device("cuda")
-
-    decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=128)
-
-    timing_probe = TimingProbe()
-    print(f"expected_num_mutations = {decoder.length * 0.01}")
-
-    with open('./genomes.csv', 'w') as genomes_file:
-        ea = generational_ea(max_generations=generations, pop_size=pop_size,
-                             # Solve a problem that executes agents in the
-                             # environment and obtains fitness from it
-                             problem=UpdatedTorchEnvironmentProblem(
-                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
-                                 stop_on_done=False),
-
-                             representation=Representation(
-                                 initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
-                                 decoder=decoder),
-
-                             # The operator pipeline.
-                             pipeline=[
-                                 timing_probe,
-                                 ops.proportional_selection,
-                                 ops.clone,
-                                 ops.uniform_crossover,
-                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
-                                 ops.evaluate,
-                                 ops.pool(size=pop_size),
-                                 timing_probe,
-                                 *build_probes(genomes_file)  # Inserting all the probes at the end
-                             ])
-        list(ea)
-
-    times = timing_probe.buffer
-    dir = 'Results/'
-    filename = 'leap_model_size_{}.p'.format(args.model_size)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    with open(os.path.join(dir, filename), 'wb') as f:
-        pickle.dump(times, f)
-
-
-def run_very_large_network():
-    # Load the OpenAI Gym simulation
-    environment = gym.make('CartPole-v1')
-    # Representation
-    num_actions = environment.action_space.n
-    print(num_actions)
-    # Decode genomes into a feed-forward neural network,
-    # but also wrap an argmax around the networks so their
-    # output is a single integer
-    # device = torch.device("cuda")
-
-    decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=256)
-
-    timing_probe = TimingProbe()
-    print(f"expected_num_mutations = {decoder.length * 0.01}")
-
-    with open('./genomes.csv', 'w') as genomes_file:
-        ea = generational_ea(max_generations=generations, pop_size=pop_size,
-                             # Solve a problem that executes agents in the
-                             # environment and obtains fitness from it
-                             problem=UpdatedTorchEnvironmentProblem(
-                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
-                                 stop_on_done=False),
-
-                             representation=Representation(
-                                 initialize=create_real_vector(bounds=([[-1, 1]] * decoder.length)),
-                                 decoder=decoder),
-
-                             # The operator pipeline.
-                             pipeline=[
-                                 timing_probe,
-                                 ops.proportional_selection,
-                                 ops.clone,
-                                 ops.uniform_crossover,
-                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder.length),
-                                 ops.evaluate,
-                                 ops.pool(size=pop_size),
-                                 timing_probe,
-                                 *build_probes(genomes_file)  # Inserting all the probes at the end
-                             ])
-        list(ea)
-
-    times = timing_probe.buffer
-    dir = 'Results/'
-    filename = 'leap_model_size_{}.p'.format(args.model_size)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    with open(os.path.join(dir, filename), 'wb') as f:
-        pickle.dump(times, f)
-
-
-##############################
-# Entry point
-##############################
-if __name__ == '__main__':
     if args.model_size == "tiny":
-        run_tiny_network()
+        decoder = executable.WrapperDecoder(
+            wrapped_decoder=neural_network.SimpleNeuralNetworkDecoder(
+                shape=(num_inputs, num_hidden_nodes, num_actions)
+            ),
+            decorator=executable.ArgmaxExecutable)
+        decoder_length = decoder.wrapped_decoder.length
     elif args.model_size == "small":
-        run_small_network()
+        decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=16)
+        decoder_length = decoder.length
     elif args.model_size == "medium":
-        run_medium_network()
+        decoder = PytorchDecoder(DQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=64)
+        decoder_length = decoder.length
     elif args.model_size == "large":
-        run_large_network()
+        decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=128)
+        decoder_length = decoder.length
     else:
-        run_very_large_network()
+        decoder = PytorchDecoder(LargeDQN, device, num_inputs=4, num_outputs=num_actions, hidden_size=256)
+        decoder_length = decoder.length
+
+    probe_builder = get_probes(args.model_size)
+
+    problem = get_problem(args.model_size)
+
+    print(f"Num params:{decoder_length}")
+    with open('./genomes.csv', 'w') as genomes_file:
+
+        ea = generational_ea(max_generations=generations, pop_size=pop_size,
+                             # Solve a problem that executes agents in the
+                             # environment and obtains fitness from it
+                             problem=problem(
+                                 runs_per_fitness_eval, simulation_steps, environment, 'reward', gui=gui,
+                                 stop_on_done=False),
+
+                             representation=Representation(
+                                 initialize=create_real_vector(bounds=([[-1, 1]] * decoder_length)),
+                                 decoder=decoder),
+
+                             # The operator pipeline.
+                             pipeline=[
+                                 timing_probe,
+                                 ops.proportional_selection,
+                                 ops.clone,
+                                 ops.uniform_crossover,
+                                 mutate_uniform(low=low, high=high, expected_num_mutations=0.01 * decoder_length),
+                                 ops.evaluate,
+                                 ops.pool(size=pop_size),
+                                 timing_probe,
+                                 *probe_builder(genomes_file)  # Inserting all the probes at the end
+                             ])
+        list(ea)
+    times = timing_probe.buffer
+    dir = 'Results/'
+    filename = 'leap_model_size_{}.p'.format(args.model_size)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    with open(os.path.join(dir, filename), 'wb') as f:
+        pickle.dump(times, f)
+
+    # if args.model_size == "tiny":
+    #     run_tiny_network()
+    # elif args.model_size == "small":
+    #     run_small_network()
+    # elif args.model_size == "medium":
+    #     run_medium_network()
+    # elif args.model_size == "large":
+    #     run_large_network()
+    # else:
+    #     run_very_large_network()
 
     print(f"Total program time: {time.time() - beginning_time}")
