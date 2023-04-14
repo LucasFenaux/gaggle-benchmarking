@@ -23,7 +23,7 @@ from src.ga.ga_factory import GAFactory
 import transformers
 import pickle
 import torch
-import numpy as np
+
 
 def parse_args():
     parser = transformers.HfArgumentParser((OutdirArgs, SysArgs, IndividualArgs, GAArgs, ProblemArgs,
@@ -51,16 +51,13 @@ def train(outdir_args: OutdirArgs,
     class GaggleRastriginProblem(Problem):
         @torch.no_grad()
         def evaluate(self, individual: Individual, *args, **kwargs) -> float:
-            chromo = individual.forward()
-            dimension = individual.individual_args.individual_size
+            chromo = individual()
+            dimension = individual.genome_size
             rastrigin = - (10 * dimension + \
                 torch.sum(chromo ** 2 - 10 * torch.cos(2 * torch.pi * chromo)))
             return rastrigin.cpu().item()
         
     ProblemFactory.register_problem(problem_type='custom', problem_name='Rastrigin', problem=GaggleRastriginProblem)
-    # ProblemFactory.convert_and_register_leap_problem(problem_name='Rastrigin', leap_problem=RastriginProblem,
-    #                                                  a=individual_args.np_individual_size)
-
     
     population_manager: PopulationManager = PopulationManager(ga_args, individual_args, sys_args=sys_args)
     trainer: GA = GAFactory.from_ga_args(population_manager=population_manager, ga_args=ga_args,

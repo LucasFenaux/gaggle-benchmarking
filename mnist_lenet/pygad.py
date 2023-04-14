@@ -24,23 +24,6 @@ def accuracy(y_pred, y) -> float:
     return (y_pred.argmax(1) == y).float().mean()
 
 
-problem_args = ProblemArgs()
-
-device = torch.device("cuda")
-
-train_dataset = MNIST(problem_args, train=True)
-train_data, train_transforms = train_dataset.get_data_and_transform()
-data_input, data_target = train_data
-data_input, data_target = data_input.to(device), data_target.to(device)
-
-test_dataset = MNIST(problem_args, train=False)
-test_data, test_transforms = test_dataset.get_data_and_transform()
-
-model = LeNet5().to(device)
-
-times = []
-
-
 def fitness_func(solution, sol_idx):
     with torch.no_grad():
         transformed_data_input = train_transforms(data_input)
@@ -62,6 +45,23 @@ def callback_generation(ga_instance):
     print(f"Time taken = {time_taken}")
     last_gen_time = cur_time
     times.append(time_taken)
+
+
+problem_args = ProblemArgs()
+
+device = torch.device("cuda")
+
+train_dataset = MNIST(problem_args, train=True)
+train_data, train_transforms = train_dataset.get_data_and_transform()
+data_input, data_target = train_data
+data_input, data_target = data_input.to(device), data_target.to(device)
+
+test_dataset = MNIST(problem_args, train=False)
+test_data, test_transforms = test_dataset.get_data_and_transform()
+
+model = LeNet5().to(device)
+
+times = []
 
 
 args = get_arg_parser().parse_args()

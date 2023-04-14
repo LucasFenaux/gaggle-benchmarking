@@ -12,15 +12,6 @@ sys.path.insert(1, os.path.join(sys.path[0], '../LEAP/leap_ec'))
 import pickle
 import argparse
 import numpy as np
-
-def get_arg_parser():
-    parser = argparse.ArgumentParser(description=" ")
-    parser.add_argument("--dimension", dest="dimension", default=10, type=int)
-    return parser
-
-
-
-
 from leap_ec import Individual, Representation, test_env_var, Decoder
 from leap_ec import probe, ops
 from leap_ec.algorithm import generational_ea
@@ -29,6 +20,14 @@ from leap_ec.real_rep.initializers import create_real_vector
 from leap_ec.real_rep.problems import ScalarProblem
 from leap_ec.decoder import IdentityDecoder
 from new_leap_operators import TimingProbe, mutate_uniform, build_probes
+
+
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description=" ")
+    parser.add_argument("--dimension", dest="dimension", default=10, type=int)
+    return parser
+
+
 class RastriginProblem(ScalarProblem):
     """ Modified to include negative fittness (LEAP had a bug)
     """

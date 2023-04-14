@@ -15,15 +15,14 @@ def get_arg_parser():
     parser.add_argument("--dimension", dest="dimension", default=10, type=int)
     return parser
 
-times = []
 
 def fitness_func(solution, sol_idx):
     return -(10. * len(solution) + np.sum(solution ** 2 - 10. * np.cos(2 * np.pi * solution)))
 
-def mod_roulette_wheel_selection(fitness, num_parents, ga_instance):
 
+def mod_roulette_wheel_selection(fitness, num_parents, ga_instance):
         """
-        Modified from PyGAD
+        Modified from PyGAD to support negative fitness values
         """
         min_fit = np.abs(np.min(fitness))
         fitness_temp = fitness + min_fit
@@ -61,6 +60,7 @@ def mod_roulette_wheel_selection(fitness, num_parents, ga_instance):
                     break
         return parents, np.array(parents_indices)
 
+
 def callback_generation(ga_instance):
     global last_gen_time, times
     print("Generation = {generation}".format(generation=ga_instance.generations_completed))
@@ -70,6 +70,9 @@ def callback_generation(ga_instance):
     print(f"Time taken = {time_taken}")
     last_gen_time = cur_time
     times.append(time_taken)
+
+
+times = []
 
 args = get_arg_parser().parse_args()
 
