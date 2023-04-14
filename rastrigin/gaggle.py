@@ -24,44 +24,6 @@ import transformers
 import pickle
 import torch
 import numpy as np
-from leap_ec.real_rep.problems import ScalarProblem
-
-
-# class RastriginProblem(ScalarProblem):
-#     """ Modified to include negative fittness (LEAP had a bug)
-#     """
-#     """ Standard bounds."""
-#     bounds = (-5.12, 5.12)
-#     #NOTE we changed maximize to true
-#     def __init__(self, a=1.0, maximize=True):
-#         super().__init__(maximize)
-#         self.a = a
-
-#     def evaluate(self, phenome):
-#         """
-#         Computes the function value from a real-valued list phenome:
-
-#         >>> phenome = [1.0/12, 0]
-#         >>> RastriginProblem().evaluate(phenome) # doctest: +ELLIPSIS
-#         0.1409190406...
-
-#         :param phenome: real-valued vector to be evaluated
-#         :returns: its fitness
-#         """
-#         #NOTE: We made negative as it is wrong
-#         if isinstance(phenome, np.ndarray):
-#             return - (self.a * len(phenome) + \
-#                 np.sum(phenome ** 2 - self.a * np.cos(2 * np.pi * phenome)))
-#         return self.a * \
-#             len(phenome) + sum([x ** 2 - self.a *
-#                                 np.cos(2 * np.pi * x) for x in phenome])
-
-#     def worse_than(self, first_fitness, second_fitness):
-#         return super().worse_than(first_fitness, second_fitness)
-
-#     def __str__(self):
-#         return RastriginProblem.__name__
-
 
 def parse_args():
     parser = transformers.HfArgumentParser((OutdirArgs, SysArgs, IndividualArgs, GAArgs, ProblemArgs,
@@ -91,8 +53,8 @@ def train(outdir_args: OutdirArgs,
         def evaluate(self, individual: Individual, *args, **kwargs) -> float:
             chromo = individual.forward()
             dimension = individual.individual_args.individual_size
-            rastrigin = - (dimension * len(chromo) + \
-                torch.sum(chromo ** 2 - dimension * torch.cos(2 * torch.pi * chromo)))
+            rastrigin = - (10 * dimension + \
+                torch.sum(chromo ** 2 - 10 * torch.cos(2 * torch.pi * chromo)))
             return rastrigin.cpu().item()
         
     ProblemFactory.register_problem(problem_type='custom', problem_name='Rastrigin', problem=GaggleRastriginProblem)
@@ -107,7 +69,7 @@ def train(outdir_args: OutdirArgs,
     trainer.train()
     times = trainer.saved_metrics['train_metrics']['time_taken']
     dir = 'Results/'
-    filename = 'gaggle_dimension_{}.p'.format(individual_args.np_individual_size)
+    filename = 'gaggle_dimension_{}.p'.format(individual_args.individual_size)
     if not os.path.exists(dir):
         os.makedirs(dir)
     with open(os.path.join(dir,filename), 'wb') as f:
