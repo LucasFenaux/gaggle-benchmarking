@@ -5,7 +5,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 
-from src.arguments import ConfigArgs
+from gaggle.gaggle.arguments import ConfigArgs
 from src.arguments.problem_args import ProblemArgs
 from src.arguments.sys_args import SysArgs
 from src.arguments.individual_args import IndividualArgs

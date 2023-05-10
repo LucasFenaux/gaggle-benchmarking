@@ -1,7 +1,7 @@
 [submodule "gaggle"]
-	path = gaggle
-	url = git@github.com:LucasFenaux/GAG.git
-	branch = sphinx
+	path = torch-gaggle
+	url = git@github.com:LucasFenaux/torch-gaggle.git
+	branch = main
 [submodule "pyGAD"]
 	path = pyGAD
 	url = git@github.com:ahmedfgad/GeneticAlgorithmPython.git
