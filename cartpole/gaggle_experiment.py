@@ -3,18 +3,17 @@ beginning_time = time.time()
 import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-sys.path.insert(1, os.path.join(sys.path[0], '../gaggle'))
 
-from gaggle.gaggle.arguments import ConfigArgs
-from src.arguments.problem_args import ProblemArgs
-from src.arguments.sys_args import SysArgs
-from src.arguments.individual_args import IndividualArgs
-from src.arguments.outdir_args import OutdirArgs
-from src.arguments.ga_args import GAArgs
-from src.population.population_manager import PopulationManager
-from src.utils.special_print import print_dict_highlighted
-from src.ga import GA
-from src.ga.ga_factory import GAFactory
+from gaggle.arguments import ConfigArgs
+from gaggle.arguments.problem_args import ProblemArgs
+from gaggle.arguments.sys_args import SysArgs
+from gaggle.arguments.individual_args import IndividualArgs
+from gaggle.arguments.outdir_args import OutdirArgs
+from gaggle.arguments.ga_args import GAArgs
+from gaggle.population.population_manager import PopulationManager
+from gaggle.utils.special_print import print_dict_highlighted
+from gaggle.ga import GA
+from gaggle.ga.ga_factory import GAFactory
 import transformers
 import pickle
 from dataclasses import dataclass, field
